@@ -4,4 +4,18 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "coloredlogs>=15.0.1",
+    "dvc[all]>=3.63.0",
+    "dvclive>=3.48.5",
+    "imbalanced-learn",
+    "matplotlib>=3.10.6",
+    "mlflow>=3.3.2",
+    "pandas>=2.3.2",
+    "pyaml>=25.7.0",
+    "scikit-learn>=1.7.1",
+    "seaborn>=0.13.2",
+]
+
+[tool.uv.sources]
+imbalanced-learn = { git = "https://github.com/scikit-learn-contrib/imbalanced-learn" }

@@ -1,0 +1,85 @@
+schema: '2.0'
+stages:
+  prepare:
+    cmd: uv run src/prepare.py data/raw
+    deps:
+    - path: data/raw
+      hash: md5
+      md5: fb61b128cb50dbadd52fa6453ce00cca.dir
+      size: 1152270765
+      nfiles: 5
+    params:
+      params.yaml:
+        prepare.adjustment.attempted: false
+        prepare.adjustment.tool_separate: false
+        prepare.dataset: CICIDS2017_improved
+        prepare.oversampling.method: SMOTE
+        prepare.oversampling.params:
+          neighbors: 3
+          seed: 42
+          sampling_strategy: auto
+        prepare.test_size: 0.3
+    outs:
+    - path: data/prepared/test
+      hash: md5
+      md5: 17648af65a40939e895d6a7fb7ec9c51.dir
+      size: 61305162
+      nfiles: 2
+    - path: data/prepared/train
+      hash: md5
+      md5: 7e94fbc7c5326b5ea521f347d97c4c22.dir
+      size: 1226007885
+      nfiles: 2
+    - path: logs/prepare.log
+      hash: md5
+      md5: a6900df763bb75118603bd27ee9ce5b1
+      size: 287
+  train:
+    cmd: uv run src/train.py --no-offline
+    deps:
+    - path: data/prepared/train
+      hash: md5
+      md5: 7e94fbc7c5326b5ea521f347d97c4c22.dir
+      size: 1226007885
+      nfiles: 2
+    - path: src/classifier
+      hash: md5
+      md5: 129b09fe296a5567372e5db824294d70.dir
+      size: 3879
+      nfiles: 2
+    - path: src/train.py
+      hash: md5
+      md5: 06f4e5b97a0480880e87e9771c8f88d5
+      size: 1746
+    params:
+      params.yaml:
+        mlflow.experiment_name: test
+        mlflow.tracking_uri: http://127.0.0.1:5000
+        train.classifier.model: ImprovedC45
+        train.classifier.params.max_depth: 10
+  evaluate:
+    cmd: uv run src/evaluate.py --no-offline
+    deps:
+    - path: data/prepared/test
+      hash: md5
+      md5: 17648af65a40939e895d6a7fb7ec9c51.dir
+      size: 61305162
+      nfiles: 2
+    - path: src/classifier
+      hash: md5
+      md5: 129b09fe296a5567372e5db824294d70.dir
+      size: 3879
+      nfiles: 2
+    - path: src/evaluate.py
+      hash: md5
+      md5: 3d4bbdb8ec07fe17b5fd0ac77f5de6b2
+      size: 4061
+    params:
+      params.yaml:
+        mlflow.experiment_name: test
+        mlflow.tracking_uri: http://127.0.0.1:5000
+    outs:
+    - path: logs/evaluate.log
+      hash: md5
+      md5: 0854c7ad76524b8c3785ff5297906f54
+      size: 193

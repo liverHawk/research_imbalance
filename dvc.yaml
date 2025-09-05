@@ -1,0 +1,40 @@
+stages:
+  prepare:
+    cmd: uv run src/prepare.py data/raw
+    deps:
+      - data/raw
+    params:
+      - prepare.dataset
+      - prepare.adjustment.attempted
+      - prepare.adjustment.tool_separate
+      - prepare.test_size
+      - prepare.oversampling.method
+      - prepare.oversampling.params
+    outs:
+      - data/processed/train
+      - data/processed/test
+      - logs/prepare.log
+  
+  train:
+    cmd: uv run src/train.py --no-offline
+    deps:
+      - src/classifier
+      - data/processed/train
+      - src/train.py
+    params:
+      - train.classifier.model
+      - train.classifier.params.max_depth
+      - mlflow.tracking_uri
+      - mlflow.experiment_name
+  
+  evaluate:
+    cmd: uv run src/evaluate.py --no-offline
+    deps:
+      - src/evaluate.py
+      - data/processed/test
+      - src/classifier
+    params:
+      - mlflow.tracking_uri
+      - mlflow.experiment_name
+    outs:
+      - logs/evaluate.log

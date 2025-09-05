@@ -1,0 +1,23 @@
+mlflow:
+  tracking_uri: http://127.0.0.1:5000
+  experiment_name: test
+
+prepare:
+  dataset: CICIDS2017_improved
+  adjustment:
+    combine_web_attack: true
+    attempted: false
+    tool_separate: false
+  test_size: 0.3
+  oversampling:
+    method: SMOTE
+    params:
+      neighbors: 3
+      seed: 42
+      sampling_strategy: auto
+
+train:
+  classifier: 
+    model: ImprovedC45
+    params:
+      max_depth: 10

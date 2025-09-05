@@ -1,0 +1,12 @@
+0: BENIGN, test: 474769
+1: Benign, test: 3594
+2: Botnet, test: 221
+3: DDoS, test: 28543
+4: DoS, test: 51490
+5: FTP-Patator, test: 1192
+6: Heartbleed, test: 3
+7: Infiltration, test: 11
+8: Infiltration - Portscan, test: 21530
+9: Portscan, test: 47720
+10: SSH-Patator, test: 888
+11: Web Attack, test: 31

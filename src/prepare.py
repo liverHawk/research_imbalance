@@ -100,7 +100,6 @@ def oversampling(df, method, method_params):
     return pd.concat([X_resampled, y_resampled], axis=1)
 
 
-@mlflow.trace
 def data_process(input_path, params):
     log_path = os.path.join("logs", "prepare.log")
     logger = setup_logging(log_path)
@@ -178,7 +177,9 @@ def main():
     params = all_params["prepare"]
 
     mlflow.set_tracking_uri(all_params["mlflow"]["tracking_uri"])
-    mlflow.set_experiment(all_params["mlflow"]["experiment_name"])
+    mlflow.set_experiment(
+        f"{all_params['mlflow']['experiment_name']}_prepare"
+    )
 
     print(params)
 
@@ -206,6 +207,23 @@ def main():
         input_path=dataset_path,
         params=params
     )
+
+    mlflow.start_run()
+    mlflow.log_params(params)
+
+    mlflow.log_metrics({
+        "train_size": len(train_df),
+        "test_size": len(test_df),
+    })
+    mlflow.log_dict(
+        train_df["Label"].value_counts().to_dict(),
+        "train_label_counts.json"
+    )
+    mlflow.log_dict(
+        test_df["Label"].value_counts().to_dict(),
+        "test_label_counts.json"
+    )
+    mlflow.end_run()
 
     files = [
         [train_df, output_train, "train", 10_000_000],

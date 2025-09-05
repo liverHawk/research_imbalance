@@ -7,13 +7,12 @@ from classifier.improved_c45 import ImprovedC45
 import mlflow
 
 
-@mlflow.trace
 def train_process(model, mlflow_params):
     log_path = os.path.join("logs", "train.log")
     logger = setup_logging(log_path)
 
     logger.info(f"MLflow tracking URI: {mlflow_params['tracking_uri']}")
-    mlflow.set_experiment(mlflow_params['experiment_name'])
+    mlflow.set_experiment(f"{mlflow_params['experiment_name']}_train")
     mlflow.autolog()
     mlflow.start_run()
 

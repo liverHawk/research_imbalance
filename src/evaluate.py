@@ -30,7 +30,6 @@ def save_evaluation_results(predict_probs, test_labels: pd.Series):
     conf_matrix = metrics.confusion_matrix(test_labels, predict_actions)
 
     txt_path = os.path.join("evaluate", "confusion_matrix.csv")
-    os.makedirs(os.path.dirname(txt_path), exist_ok=True)
     with open(txt_path, "w") as f:
         length = len(test_labels.unique())
         f.write(",".join([str(i) for i in range(length)]))
@@ -85,9 +84,7 @@ def load_mlflow_run_id():
 
 
 @mlflow.trace
-def evaluate_process(evaluate_path, mlflow_params):
-    
-    mlflow.set_experiment(mlflow_params['experiment_name'])
+def evaluate_process():
     mlflow.start_run()
 
     log_path = os.path.join("logs", "evaluate.log")
@@ -131,9 +128,12 @@ def main():
     params = yaml.safe_load(open("params.yaml", "r"))
     mlflow_params = params["mlflow"]
     evaluate_result_path = os.path.join("evaluate")
+    os.makedirs(evaluate_result_path, exist_ok=True)
 
+    mlflow.set_experiment(f"{mlflow_params['experiment_name']}_evaluate")
     mlflow.set_tracking_uri(mlflow_params['tracking_uri'])
-    evaluate_process(evaluate_result_path, mlflow_params)
+
+    evaluate_process()
 
 
 if __name__ == "__main__":

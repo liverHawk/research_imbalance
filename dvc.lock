@@ -20,19 +20,14 @@ stages:
           sampling_strategy: auto
         prepare.test_size: 0.3
     outs:
-    - path: data/prepared/test
+    - path: data/prepared/
       hash: md5
-      md5: 17648af65a40939e895d6a7fb7ec9c51.dir
-      size: 61305162
-      nfiles: 2
-    - path: data/prepared/train
-      hash: md5
-      md5: 7e94fbc7c5326b5ea521f347d97c4c22.dir
-      size: 1226007885
-      nfiles: 2
+      md5: 7f16324979adb5da550adeb3d3739374.dir
+      size: 1287313047
+      nfiles: 4
     - path: logs/prepare.log
       hash: md5
-      md5: a6900df763bb75118603bd27ee9ce5b1
+      md5: 532721df2cfee2f19f69778a0144c007
       size: 287
   train:
     cmd: uv run src/train.py --no-offline
@@ -57,12 +52,22 @@ stages:
         mlflow.tracking_uri: http://127.0.0.1:5000
         train.classifier.model: ImprovedC45
         train.classifier.params.max_depth: 10
+    outs:
+    - path: data/models
+      hash: md5
+      md5: d49b78390d33eb2716c532eb7bd3a0b4.dir
+      size: 59621
+      nfiles: 1
+    - path: logs/train.log
+      hash: md5
+      md5: efbe0d58cae46dd4e7fb4688f22481ff
+      size: 366
   evaluate:
     cmd: uv run src/evaluate.py --no-offline
     deps:
     - path: data/prepared/test
       hash: md5
-      md5: 17648af65a40939e895d6a7fb7ec9c51.dir
+      md5: f5117d240891bde402cd0250065f7be1.dir
       size: 61305162
       nfiles: 2
     - path: src/classifier
@@ -72,14 +77,19 @@ stages:
       nfiles: 2
     - path: src/evaluate.py
       hash: md5
-      md5: 3d4bbdb8ec07fe17b5fd0ac77f5de6b2
-      size: 4061
+      md5: 1031f19afa8abffd26aacf855656b91f
+      size: 4119
     params:
       params.yaml:
         mlflow.experiment_name: test
         mlflow.tracking_uri: http://127.0.0.1:5000
     outs:
+    - path: evaluate
+      hash: md5
+      md5: 91ffc906500b8e5f943e7492fd982a13.dir
+      size: 1164
+      nfiles: 2
     - path: logs/evaluate.log
       hash: md5
-      md5: 0854c7ad76524b8c3785ff5297906f54
+      md5: 29ce178170c2ce5e21b376b9e2273fde
       size: 193

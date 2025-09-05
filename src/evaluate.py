@@ -30,6 +30,7 @@ def save_evaluation_results(predict_probs, test_labels: pd.Series):
     conf_matrix = metrics.confusion_matrix(test_labels, predict_actions)
 
     txt_path = os.path.join("evaluate", "confusion_matrix.csv")
+    os.makedirs(os.path.dirname(txt_path), exist_ok=True)
     with open(txt_path, "w") as f:
         length = len(test_labels.unique())
         f.write(",".join([str(i) for i in range(length)]))

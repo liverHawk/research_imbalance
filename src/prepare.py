@@ -174,7 +174,11 @@ def save_csv(df, path):
 
 
 def main():
-    params = yaml.safe_load(open("params.yaml"))["prepare"]
+    all_params = yaml.safe_load(open("params.yaml"))
+    params = all_params["prepare"]
+
+    mlflow.set_tracking_uri(all_params["mlflow"]["tracking_uri"])
+    mlflow.set_experiment(all_params["mlflow"]["experiment_name"])
 
     print(params)
 

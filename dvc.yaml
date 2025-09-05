@@ -11,32 +11,35 @@ stages:
     - prepare.oversampling.method
     - prepare.oversampling.params
     outs:
-    - data/prepared/train
-    - data/prepared/test
+    - data/prepared/
     - logs/prepare.log
 
   train:
     cmd: uv run src/train.py --no-offline
     deps:
     - src/classifier
-    - data/prepared/train
     - src/train.py
+    - data/prepared/train
     params:
     - train.classifier.model
     - train.classifier.params.max_depth
     - mlflow.tracking_uri
     - mlflow.experiment_name
+    outs:
+    - data/models
+    - logs/train.log
 
   evaluate:
     cmd: uv run src/evaluate.py --no-offline
     deps:
+    - src/classifier
     - src/evaluate.py
     - data/prepared/test
-    - src/classifier
     params:
     - mlflow.tracking_uri
     - mlflow.experiment_name
     outs:
+    - evaluate
     - logs/evaluate.log
 metrics:
 - evaluate/metrics.json

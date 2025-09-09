@@ -172,6 +172,19 @@ def save_csv(df, path):
     )
 
 
+def multiprocess_save_csv(dfs, paths):
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = [
+            executor.submit(save_csv, df, path) for df, path in zip(dfs, paths)
+        ]
+        for future in as_completed(futures):
+            try:
+                future.result()
+            except Exception as e:
+                print(f"Error during saving CSV files: {e}")
+                raise e
+
+
 def main():
     all_params = yaml.safe_load(open("params.yaml"))
     params = all_params["prepare"]
@@ -225,26 +238,25 @@ def main():
     )
     mlflow.end_run()
 
-    files = [
-        [train_df, output_train, "train", 10_000_000],
-        [test_df, output_test, "test", 500_000]
-    ]
+    # files = [
+    #     [train_df, output_train, "train", 10_000_000],
+    #     [test_df, output_test, "test", 500_000]
+    # ]
 
     train = save_split_csv(train_df, output_train, "train", 10_000_000)
     test = save_split_csv(test_df, output_test, "test", 500_000)
     files = train + test
 
-    with ThreadPoolExecutor(max_workers=2) as executor:
-        futures = [
-            executor.submit(save_csv, *file) for file in files
-        ]
-        try:
-            for future in as_completed(futures):
-                future.result()
-                print(f"CSV file saved successfully. {future.result()}")
-        except Exception as e:
-            print(f"Error during saving CSV files: {e}")
-            sys.exit(1)
+    try:
+        multiprocess_save_csv(
+            dfs=[df for df, _ in files],
+            paths=[path for _, path in files]
+        )
+    except Exception as e:
+        print(f"Error during saving CSV files: {e}")
+        for file in files:
+            save_csv(file[0], file[1])
+
 
 
 if __name__ == "__main__":

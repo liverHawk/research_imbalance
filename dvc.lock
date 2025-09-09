@@ -5,9 +5,9 @@ stages:
     deps:
     - path: data/raw
       hash: md5
-      md5: fb61b128cb50dbadd52fa6453ce00cca.dir
-      size: 1152270765
-      nfiles: 5
+      md5: 0c4677b470c0005e387d356576def49d.dir
+      size: 38526262370
+      nfiles: 19
     params:
       params.yaml:
         prepare.adjustment.attempted: false
@@ -22,25 +22,25 @@ stages:
     outs:
     - path: data/prepared/
       hash: md5
-      md5: 2864ae28d6d2c728a9b5d1944a64125a.dir
+      md5: f080a9f2919557c74882e2ab215716a0.dir
       size: 1287313047
       nfiles: 4
     - path: logs/prepare.log
       hash: md5
-      md5: 9a9c69182b548f9004da611144a356dc
+      md5: f1ad61f299c73eb950f988ecbca2e187
       size: 287
   train:
     cmd: uv run src/train.py --no-offline
     deps:
     - path: data/prepared/train
       hash: md5
-      md5: eb2b254c0b1d20015464158760068f2c.dir
+      md5: abb7e9954eafde70d55b07442cf819f0.dir
       size: 1226007885
       nfiles: 2
     - path: src/classifier
       hash: md5
-      md5: 129b09fe296a5567372e5db824294d70.dir
-      size: 3879
+      md5: 9534ddd898b368659820d79e2b714195.dir
+      size: 3873
       nfiles: 2
     - path: src/train.py
       hash: md5
@@ -55,25 +55,25 @@ stages:
     outs:
     - path: data/models
       hash: md5
-      md5: b20958a0bcbd497b5501ac8637f9f96d.dir
+      md5: 7ce9ba645861b64974be3736eda709f9.dir
       size: 59621
       nfiles: 1
     - path: logs/train.log
       hash: md5
-      md5: 49b8e188b1a63524f0312cf0557f8972
+      md5: 13ba8f00d07b748c0798dceab42cc1e9
       size: 366
   evaluate:
     cmd: uv run src/evaluate.py --no-offline
     deps:
     - path: data/prepared/test
       hash: md5
-      md5: 0299f2624029a32204394234c72f8326.dir
+      md5: 8240d06fc30337ee113d067afbc6037c.dir
       size: 61305162
       nfiles: 2
     - path: src/classifier
       hash: md5
-      md5: 129b09fe296a5567372e5db824294d70.dir
-      size: 3879
+      md5: 9534ddd898b368659820d79e2b714195.dir
+      size: 3873
       nfiles: 2
     - path: src/evaluate.py
       hash: md5
@@ -91,5 +91,32 @@ stages:
       nfiles: 2
     - path: logs/evaluate.log
       hash: md5
-      md5: dd9348c0bed9b2b84ba8a2a4021338aa
+      md5: 4f9c5855c00cc4a02808d263d69e68a6
       size: 193
+  check:
+    cmd: uv run src/check.py data/raw
+    deps:
+    - path: data/raw
+      hash: md5
+      md5: 0c4677b470c0005e387d356576def49d.dir
+      size: 38526262370
+      nfiles: 19
+    - path: src/check.py
+      hash: md5
+      md5: 15d011a616646cdfb4ad303fe957f92f
+      size: 1753
+    params:
+      params.yaml:
+        mlflow.experiment_name: test
+        mlflow.tracking_uri: http://127.0.0.1:5000
+        prepare.dataset: CICIDS2017_improved
+    outs:
+    - path: check/
+      hash: md5
+      md5: b771fe7b13ad430f80961007bfd0438b.dir
+      size: 654
+      nfiles: 1
+    - path: logs/check.log
+      hash: md5
+      md5: 158b250f85541aa7baa16487233a9c9b
+      size: 219

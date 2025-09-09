@@ -1,4 +1,16 @@
 stages:
+  check:
+    cmd: uv run src/check.py data/raw
+    deps:
+    - src/check.py
+    - data/raw
+    params:
+    - mlflow.tracking_uri
+    - mlflow.experiment_name
+    - prepare.dataset
+    outs:
+    - logs/check.log
+    - check/
   prepare:
     cmd: uv run src/prepare.py data/raw
     deps:
@@ -13,7 +25,6 @@ stages:
     outs:
     - data/prepared/
     - logs/prepare.log
-
   train:
     cmd: uv run src/train.py --no-offline
     deps:
@@ -28,7 +39,6 @@ stages:
     outs:
     - data/models
     - logs/train.log
-
   evaluate:
     cmd: uv run src/evaluate.py --no-offline
     deps:

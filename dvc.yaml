@@ -2,39 +2,53 @@ stages:
   prepare:
     cmd: uv run src/prepare.py data/raw
     deps:
-      - data/raw
+    - data/raw
     params:
-      - prepare.dataset
-      - prepare.adjustment.attempted
-      - prepare.adjustment.tool_separate
-      - prepare.test_size
-      - prepare.oversampling.method
-      - prepare.oversampling.params
+    - prepare.dataset
+    - prepare.adjustment.attempted
+    - prepare.adjustment.tool_separate
+    - prepare.test_size
+    - prepare.oversampling.method
+    - prepare.oversampling.params
     outs:
-      - data/processed/train
-      - data/processed/test
-      - logs/prepare.log
-  
+    - data/prepared/
+    - logs/prepare.log
+
   train:
     cmd: uv run src/train.py --no-offline
     deps:
-      - src/classifier
-      - data/processed/train
-      - src/train.py
+    - src/classifier
+    - src/train.py
+    - data/prepared/train
     params:
-      - train.classifier.model
-      - train.classifier.params.max_depth
-      - mlflow.tracking_uri
-      - mlflow.experiment_name
-  
+    - train.classifier.model
+    - train.classifier.params.max_depth
+    - mlflow.tracking_uri
+    - mlflow.experiment_name
+    outs:
+    - data/models
+    - logs/train.log
+
   evaluate:
     cmd: uv run src/evaluate.py --no-offline
     deps:
-      - src/evaluate.py
-      - data/processed/test
-      - src/classifier
+    - src/classifier
+    - src/evaluate.py
+    - data/prepared/test
     params:
-      - mlflow.tracking_uri
-      - mlflow.experiment_name
+    - mlflow.tracking_uri
+    - mlflow.experiment_name
     outs:
-      - logs/evaluate.log
+    - evaluate
+    - logs/evaluate.log
+metrics:
+- evaluate/metrics.json
+plots:
+- evaluate/plots/images
+- evaluate/plots/sklearn/confusion_matrix.json:
+    template: confusion
+    x: actual
+    y: predicted
+    title: Confusion Matrix
+    x_label: True Label
+    y_label: Predicted Label

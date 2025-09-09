@@ -10,6 +10,8 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 import imblearn.over_sampling as imblearn_os
 from lib.util import setup_logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import mlflow
 
 from lib.util import CICIDS2017, BASE
 
@@ -21,15 +23,15 @@ def adjust_labels(df, adjustment):
     # combine_web_attack: true -> combine Web Attack
     # tool_separate: false -> combine DoS tools
     params = [
-        adjustment["attempted"] == False,
-        adjustment["combine_web_attack"] == True,
-        adjustment["tool_separate"] == False,
+        adjustment["attempted"] is False,
+        adjustment["combine_web_attack"] is True,
+        adjustment["tool_separate"] is False,
     ]
     print(params)
 
     for label in labels:
         if params[0] and "Attempted" in label:
-            df.loc[df["Label"] == label, "Label"] = "Benign"
+            df.loc[df["Label"] == label, "Label"] = "BENIGN"
             continue
         if params[1] and "Web Attack" in label:
             df.loc[df["Label"] == label, "Label"] = "Web Attack"
@@ -46,7 +48,7 @@ def fast_process(df, type="normal"):
         df = df.drop(CICIDS2017().get_delete_columns(), axis=1)
         df = df.drop(columns=['Attempted Category'])
     elif type == "full":
-        df = df.drop(['Flow ID','Src IP','Attempted Category'], axis=1)
+        df = df.drop(['Flow ID', 'Src IP', 'Attempted Category'], axis=1)
         # Timestamp→秒
         df['Timestamp'] = (
             pd.to_datetime(df['Timestamp'], format="%Y-%m-%d %H:%M:%S.%f")
@@ -69,7 +71,8 @@ def oversampling(df, method, method_params):
     min_count = min_label_count(df)
     if min_count + 1 < method_params["neighbors"]:
         raise ValueError(
-            f"Minimum label count {min_count} is less than neighbors {method_params['neighbors']}"
+            f"Minimum label count {min_count} "
+            f"is less than neighbors {method_params['neighbors']}"
         )
 
     if method == "None":
@@ -105,17 +108,19 @@ def data_process(input_path, params):
     files = glob(f"{input_path}/*.csv")
     dfs = [fast_process(pd.read_csv(f)) for f in tqdm(files)]
     df = pd.concat(dfs, ignore_index=True)
-    
+
     df = adjust_labels(df, params["adjustment"])
-    
     df = df.dropna().dropna(axis=1, how='all')
 
     rename_dict = {
-        k: v for k, v in zip(CICIDS2017().get_features_labels(), BASE().get_features_labels())
+        k: v for k, v in zip(
+            CICIDS2017().get_features_labels(),
+            BASE().get_features_labels()
+        )
     }
     df = df.rename(columns=rename_dict)
 
-    logger.info(f"Label encoding...")
+    logger.info("Label encoding...")
     le = LabelEncoder()
     df["Label"] = le.fit_transform(df["Label"])
 
@@ -125,7 +130,7 @@ def data_process(input_path, params):
         random_state=42,
         stratify=df["Label"]
     )
-    
+
     test_value_counts = test_df["Label"].value_counts()
 
     with open("label.txt", "w") as f:
@@ -142,20 +147,39 @@ def data_process(input_path, params):
 
     return train_df, test_df
 
+
 # ...existing code...
 def save_split_csv(df, output_dir, output_prefix, chunk_size=100_000):
+    arrays = []
+
     for i, start in enumerate(range(0, len(df), chunk_size)):
         path = os.path.join(output_dir, f"{output_prefix}_part{i+1}.csv.gz")
-
-        df.iloc[start:start+chunk_size].to_csv(
-            path,
-            index=False,
-            float_format="%.3f",
-            compression="gzip"
+        arrays.append(
+            [
+                df.iloc[start:start+chunk_size],
+                path
+            ]
         )
+    return arrays
+
+
+def save_csv(df, path):
+    df.to_csv(
+        path,
+        index=False,
+        float_format="%.3f",
+        compression="gzip"
+    )
+
 
 def main():
-    params = yaml.safe_load(open("params.yaml"))["prepare"]
+    all_params = yaml.safe_load(open("params.yaml"))
+    params = all_params["prepare"]
+
+    mlflow.set_tracking_uri(all_params["mlflow"]["tracking_uri"])
+    mlflow.set_experiment(
+        f"{all_params['mlflow']['experiment_name']}_prepare"
+    )
 
     print(params)
 
@@ -168,7 +192,7 @@ def main():
         print(f"Input file {input} does not exist.")
         sys.exit(1)
 
-    prepare_dir = os.path.join(input, "prepared")
+    prepare_dir = os.path.join(input, "..", "prepared")
     os.makedirs(os.path.join("logs"), exist_ok=True)
     os.makedirs(prepare_dir, exist_ok=True)
     os.makedirs(os.path.join(prepare_dir, "train"), exist_ok=True)
@@ -184,8 +208,43 @@ def main():
         params=params
     )
 
-    save_split_csv(train_df, output_train, "train", chunk_size=10_000_000)
-    save_split_csv(test_df, output_test, "test", chunk_size=500_000)
+    mlflow.start_run()
+    mlflow.log_params(params)
+
+    mlflow.log_metrics({
+        "train_size": len(train_df),
+        "test_size": len(test_df),
+    })
+    mlflow.log_dict(
+        train_df["Label"].value_counts().to_dict(),
+        "train_label_counts.json"
+    )
+    mlflow.log_dict(
+        test_df["Label"].value_counts().to_dict(),
+        "test_label_counts.json"
+    )
+    mlflow.end_run()
+
+    files = [
+        [train_df, output_train, "train", 10_000_000],
+        [test_df, output_test, "test", 500_000]
+    ]
+
+    train = save_split_csv(train_df, output_train, "train", 10_000_000)
+    test = save_split_csv(test_df, output_test, "test", 500_000)
+    files = train + test
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [
+            executor.submit(save_csv, *file) for file in files
+        ]
+        try:
+            for future in as_completed(futures):
+                future.result()
+                print(f"CSV file saved successfully. {future.result()}")
+        except Exception as e:
+            print(f"Error during saving CSV files: {e}")
+            sys.exit(1)
 
 
 if __name__ == "__main__":

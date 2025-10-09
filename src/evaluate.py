@@ -68,10 +68,13 @@ def save_evaluation_results(predict_probs, test_labels: pd.Series):
     ax.set_xlabel("Actual")
     ax.set_ylabel("Predicted")
     fig.tight_layout()
-    mlflow.log_figure(
-        fig,
-        "confusion_matrix_image.png",
-    )
+    # mlflow.log_figure(
+    #     fig,
+    #     "./confusion_matrix_image.png",
+    # )
+    plt_path = os.path.join("evaluate", "confusion_matrix.png")
+    fig.savefig(plt_path)
+    plt.close(fig)
 
 
 def load_mlflow_run_id():
@@ -84,7 +87,6 @@ def load_mlflow_run_id():
         return None
 
 
-@mlflow.trace
 def evaluate_process():
     log_path = os.path.join("logs", "evaluate.log")
     logger = setup_logging(log_path)
@@ -108,26 +110,26 @@ def evaluate_process():
 
     save_evaluation_results(predict_probs, test_df["Label"])
 
-    model_info = mlflow.sklearn.log_model(
-        name="improved_c45_model_evaluated",
-        sk_model=model,
-        signature=mlflow.models.infer_signature(test_df.drop("Label", axis=1), model.predict(test_df.drop("Label", axis=1)))
-    )
-    mlflow.models.evaluate(
-        model=model_info.model_uri,
-        data=test_df,
-        targets="Label",
-        model_type="classifier",
-        evaluators=["default"],
-    )
-
-    
+    # model_info = mlflow.sklearn.log_model(
+    #     artifact_path="improved_c45_model_evaluated",
+    #     sk_model=model,
+    #     signature=mlflow.models.infer_signature(
+    #         test_df.drop("Label", axis=1),
+    #         model.predict(test_df.drop("Label", axis=1)))
+    # )
+    # mlflow.models.evaluate(
+    #     model=model_info.model_uri,
+    #     data=test_df,
+    #     targets="Label",
+    #     model_type="classifier",
+    #     evaluators=["default"],
+    # )
 
 
 def main():
     params = yaml.safe_load(open("params.yaml", "r"))
     mlflow_params = params["mlflow"]
-    evaluate_result_path = os.path.join("evaluate")
+    evaluate_result_path = "evaluate"
     os.makedirs(evaluate_result_path, exist_ok=True)
 
     mlflow.set_experiment(f"{mlflow_params['experiment_name']}_evaluate")

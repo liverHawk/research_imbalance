@@ -9,6 +9,7 @@ from ipaddress import ip_address as ip
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 import imblearn.over_sampling as imblearn_os
+import imblearn.under_sampling as imblearn_us
 from lib.util import setup_logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import mlflow
@@ -100,6 +101,25 @@ def oversampling(df, method, method_params):
     return pd.concat([X_resampled, y_resampled], axis=1)
 
 
+def undersampling(df, method, method_params):
+    if method == "None":
+        return df
+    elif method == "Random":
+        us_method = imblearn_us.RandomUnderSampler(
+            sampling_strategy=method_params["sampling_strategy"],
+            random_state=method_params["seed"]
+        )
+    else:
+        raise ValueError(f"Unsupported undersampling method: {method}")
+
+    X = df.drop("Label", axis=1)
+    y = df["Label"]
+
+    X_resampled, y_resampled = us_method.fit_resample(X, y)
+
+    return pd.concat([X_resampled, y_resampled], axis=1)
+
+
 def data_process(input_path, params):
     log_path = os.path.join("logs", "prepare.log")
     logger = setup_logging(log_path)
@@ -131,18 +151,34 @@ def data_process(input_path, params):
         stratify=df["Label"]
     )
 
+    mlflow.log_dict(
+        train_df["Label"].value_counts().to_dict(),
+        "train_before_label_counts.json"
+    )
+
     test_value_counts = test_df["Label"].value_counts()
 
     with open("label.txt", "w") as f:
         for label, idx in zip(le.classes_, le.transform(le.classes_)):
             f.write(f"{idx}: {label}, test: {test_value_counts.get(idx, 0)}\n")
 
-    logger.info("Oversampling the training data...")
-    train_df = oversampling(
-        train_df,
-        method=params["oversampling"]["method"],
-        method_params=params["oversampling"]["params"]
-    )
+    sampling = params.get("sampling")
+    if sampling == "undersampling":
+        logger.info("Undersampling the training data...")
+        train_df = undersampling(
+            train_df,
+            method=params["sampling_params"]["method"],
+            method_params=params["sampling_params"]["params"]
+        )
+    elif sampling == "oversampling":
+        logger.info("Oversampling the training data...")
+        train_df = oversampling(
+            train_df,
+            method=params["sampling_params"]["method"],
+            method_params=params["sampling_params"]["params"]
+        )
+    else:
+        logger.info("No sampling applied to the training data.")
     logger.info("Data processing completed.")
 
     return train_df, test_df
@@ -204,6 +240,8 @@ def main():
     if not os.path.exists(input):
         print(f"Input file {input} does not exist.")
         sys.exit(1)
+    
+    mlflow.start_run()
 
     prepare_dir = os.path.join(input, "..", "prepared")
     os.makedirs(os.path.join("logs"), exist_ok=True)
@@ -221,7 +259,6 @@ def main():
         params=params
     )
 
-    mlflow.start_run()
     mlflow.log_params(params)
 
     mlflow.log_metrics({
@@ -236,7 +273,6 @@ def main():
         test_df["Label"].value_counts().to_dict(),
         "test_label_counts.json"
     )
-    mlflow.end_run()
 
     # files = [
     #     [train_df, output_train, "train", 10_000_000],
@@ -256,6 +292,7 @@ def main():
         print(f"Error during saving CSV files: {e}")
         for file in files:
             save_csv(file[0], file[1])
+    mlflow.end_run()
 
 
 

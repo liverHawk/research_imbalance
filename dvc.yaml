@@ -20,8 +20,9 @@ stages:
     - prepare.adjustment.attempted
     - prepare.adjustment.tool_separate
     - prepare.test_size
-    - prepare.oversampling.method
-    - prepare.oversampling.params
+    - prepare.sampling
+    - prepare.sampling_params.method
+    - prepare.sampling_params.params
     outs:
     - data/prepared/
     - logs/prepare.log

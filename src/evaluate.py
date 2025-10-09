@@ -1,5 +1,6 @@
 import yaml
 import os
+import numpy as np
 import pandas as pd
 from lib.util import setup_logging
 from classifier.improved_c45 import ImprovedC45
@@ -85,14 +86,12 @@ def load_mlflow_run_id():
 
 @mlflow.trace
 def evaluate_process():
-    mlflow.start_run()
-
     log_path = os.path.join("logs", "evaluate.log")
     logger = setup_logging(log_path)
 
     logger.info("Loading test data...")
     test_df = pd.concat(
-        [pd.read_csv(f) for f in glob(
+        [pd.read_csv(f, dtype=np.float32) for f in glob(
             os.path.join("data", "prepared", "test", "*.csv.gz")
         )],
         ignore_index=True
@@ -110,18 +109,19 @@ def evaluate_process():
     save_evaluation_results(predict_probs, test_df["Label"])
 
     model_info = mlflow.sklearn.log_model(
+        name="improved_c45_model_evaluated",
         sk_model=model,
-        artifact_path="improved_c45_model_evaluated"
+        signature=mlflow.models.infer_signature(test_df.drop("Label", axis=1), model.predict(test_df.drop("Label", axis=1)))
     )
     mlflow.models.evaluate(
         model=model_info.model_uri,
         data=test_df,
         targets="Label",
         model_type="classifier",
-        evaluators=["default"]
+        evaluators=["default"],
     )
 
-    mlflow.end_run()
+    
 
 
 def main():
@@ -133,7 +133,13 @@ def main():
     mlflow.set_experiment(f"{mlflow_params['experiment_name']}_evaluate")
     mlflow.set_tracking_uri(mlflow_params['tracking_uri'])
 
+    mlflow.start_run()
+    mlflow.log_params({
+        "sampling": params["prepare"]["sampling"],
+        "sampling_method": params["prepare"]["sampling_params"]["method"],
+    })
     evaluate_process()
+    mlflow.end_run()
 
 
 if __name__ == "__main__":

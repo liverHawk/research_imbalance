@@ -48,5 +48,8 @@ class ImprovedC45:
     def save(self, path):
         import joblib
         joblib.dump(self.clf, path)
+    
+    def score(self, X, y):
+        return self.clf.score(X, y)
 
     

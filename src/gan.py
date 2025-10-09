@@ -271,7 +271,7 @@ def main():
     print("訓練データの列を2進数化しています...")
     train_df = change_columns(train_df)
     path = os.path.join(output_train, "../binary")
-    binary_train = save_split_csv(train_df, output_train, "train", 100_000)
+    binary_train = save_split_csv(train_df, path, "train", 3_000_000)
     try:
         multiprocess_save_csv(
             dfs=[df for df, _ in binary_train],

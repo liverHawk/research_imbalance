@@ -9,12 +9,12 @@ prepare:
     attempted: false
     tool_separate: false
   test_size: 0.3
-  oversampling:
-    method: SMOTE
+  sampling: undersampling
+  sampling_params:
+    method: Random
     params:
-      neighbors: 3
-      seed: 42
       sampling_strategy: auto
+      seed: 42
 
 train:
   classifier: 

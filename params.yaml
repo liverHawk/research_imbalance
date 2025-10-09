@@ -1,6 +1,6 @@
 mlflow:
   tracking_uri: http://127.0.0.1:5000
-  experiment_name: test
+  experiment_name: test_air
 
 prepare:
   dataset: CICIDS2017_improved
@@ -9,7 +9,7 @@ prepare:
     attempted: false
     tool_separate: false
   test_size: 0.3
-  sampling: undersampling
+  sampling: None
   sampling_params:
     method: Random
     params:

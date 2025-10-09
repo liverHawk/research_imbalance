@@ -1,3 +1,7 @@
+params:
+  - mlflow.tracking_uri
+  - mlflow.experiment_name
+
 stages:
   check:
     cmd: uv run src/check.py data/raw
@@ -16,6 +20,8 @@ stages:
     deps:
     - data/raw
     params:
+    - mlflow.tracking_uri
+    - mlflow.experiment_name
     - prepare.dataset
     - prepare.adjustment.attempted
     - prepare.adjustment.tool_separate

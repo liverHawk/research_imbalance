@@ -68,12 +68,11 @@ def save_evaluation_results(predict_probs, test_labels: pd.Series):
     ax.set_xlabel("Actual")
     ax.set_ylabel("Predicted")
     fig.tight_layout()
-    # mlflow.log_figure(
-    #     fig,
-    #     "./confusion_matrix_image.png",
-    # )
     plt_path = os.path.join("evaluate", "confusion_matrix.png")
     fig.savefig(plt_path)
+    mlflow.log_artifact(
+        plt_path
+    )
     plt.close(fig)
 
 

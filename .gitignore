@@ -10,6 +10,6 @@
 .augment/rules/byterover-rules.md
 /mlruns
 __pycache__
-mlartifacts
 /evaluate
 /check
+/mlartifacts

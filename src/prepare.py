@@ -112,12 +112,28 @@ def undersampling(df, method, method_params):
     else:
         raise ValueError(f"Unsupported undersampling method: {method}")
 
-    X = df.drop("Label", axis=1)
-    y = df["Label"]
+    min_num = method_params.get("min_samples", 100)
+    label_count = df["Label"].value_counts()
+    
+    not_sampled_df = []
+    sampled_df = []
+    for label, count in label_count.items():
+        if count < min_num:
+            not_sampled_df.append(df[df["Label"] == label])
+        else:
+            sampled_df.append(df[df["Label"] == label])
+
+    sampled_labels = pd.concat(sampled_df, axis=0)
+    not_sampled_labels = pd.concat(not_sampled_df, axis=0)
+
+    X = sampled_labels.drop("Label", axis=1)
+    y = sampled_labels["Label"]
 
     X_resampled, y_resampled = us_method.fit_resample(X, y)
 
-    return pd.concat([X_resampled, y_resampled], axis=1)
+    sampled_labels = pd.concat([X_resampled, y_resampled], axis=1)
+    df = pd.concat([sampled_labels, not_sampled_labels], axis=0)
+    return df
 
 
 def data_process(input_path, params):
@@ -293,7 +309,6 @@ def main():
         for file in files:
             save_csv(file[0], file[1])
     mlflow.end_run()
-
 
 
 if __name__ == "__main__":

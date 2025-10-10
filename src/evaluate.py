@@ -109,20 +109,23 @@ def evaluate_process():
 
     save_evaluation_results(predict_probs, test_df["Label"])
 
-    # model_info = mlflow.sklearn.log_model(
-    #     artifact_path="improved_c45_model_evaluated",
-    #     sk_model=model,
-    #     signature=mlflow.models.infer_signature(
-    #         test_df.drop("Label", axis=1),
-    #         model.predict(test_df.drop("Label", axis=1)))
-    # )
-    # mlflow.models.evaluate(
-    #     model=model_info.model_uri,
-    #     data=test_df,
-    #     targets="Label",
-    #     model_type="classifier",
-    #     evaluators=["default"],
-    # )
+    model_info = mlflow.sklearn.log_model(
+        name="improved_c45_model_evaluated",
+        sk_model=model,
+        signature=mlflow.models.infer_signature(
+            test_df.drop("Label", axis=1),
+            model.predict(test_df.drop("Label", axis=1)))
+    )
+    mlflow.models.evaluate(
+        model=model_info.model_uri,
+        data=test_df,
+        targets="Label",
+        model_type="classifier",
+        # evaluators=["None"],
+        evaluator_config={
+            "max_classes_for_multiclass_roc_pr": 13
+        }
+    )
 
 
 def main():

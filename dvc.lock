@@ -16,27 +16,29 @@ stages:
         prepare.adjustment.tool_separate: false
         prepare.dataset: CICIDS2017_improved
         prepare.sampling: None
-        prepare.sampling_params.method: Random
+        prepare.sampling_params.method: None
         prepare.sampling_params.params:
-          sampling_strategy: auto
+          sampling_strategy: not minority
+          min_samples: 100
+          neighbors: 3
           seed: 42
         prepare.test_size: 0.3
     outs:
     - path: data/prepared/
       hash: md5
-      md5: feb99c180625ad4a452770d3b7c4f07a.dir
+      md5: 6d61d890961544580bbd5eb2df91887e.dir
       size: 204502524
       nfiles: 3
     - path: logs/prepare.log
       hash: md5
-      md5: 5b64c2b779507438b362787cf2112ad9
+      md5: 67bd8a661d422d76b226830dcfee812c
       size: 295
   train:
     cmd: uv run src/train.py --no-offline
     deps:
     - path: data/prepared/train
       hash: md5
-      md5: 9e7c438ed74274c43d521ddadf0c30c0.dir
+      md5: b818cc04282a198a628fe2ea8cd23f7c.dir
       size: 143197362
       nfiles: 1
     - path: src/classifier
@@ -46,8 +48,8 @@ stages:
       nfiles: 2
     - path: src/train.py
       hash: md5
-      md5: 4ccda784bf46e26ac92b8d0e8a446a70
-      size: 1959
+      md5: fdba8e5e2a7ae372c2454dd3f61de42e
+      size: 2061
     params:
       params.yaml:
         mlflow.experiment_name: test_air
@@ -57,19 +59,19 @@ stages:
     outs:
     - path: data/models
       hash: md5
-      md5: 1b6ee0c3a38053e314645b1bc73177f9.dir
+      md5: 69aaa3286552c8ffb76bad7050e328f4.dir
       size: 58997
       nfiles: 1
     - path: logs/train.log
       hash: md5
-      md5: 973db9e80c7c6a619e374c0e02b47656
+      md5: 078d4a17cd581875549c5bb24cabf287
       size: 278
   evaluate:
     cmd: uv run src/evaluate.py --no-offline
     deps:
     - path: data/prepared/test
       hash: md5
-      md5: 0ac10e367284d6cf3e4cf0edb3787935.dir
+      md5: e8caf2395bf4434b679f13ea0be88742.dir
       size: 61305162
       nfiles: 2
     - path: src/classifier
@@ -79,8 +81,8 @@ stages:
       nfiles: 2
     - path: src/evaluate.py
       hash: md5
-      md5: 0170af896343f35403a020eb179c90c9
-      size: 4482
+      md5: 23cf9842471cfc534aa8b4740d1918c9
+      size: 4533
     params:
       params.yaml:
         mlflow.experiment_name: test_air
@@ -93,7 +95,7 @@ stages:
       nfiles: 3
     - path: logs/evaluate.log
       hash: md5
-      md5: eca27aae96f98281626d64019020cab2
+      md5: 41768be2ca677d175b3c238fd994a3b0
       size: 193
   check:
     cmd: uv run src/check.py data/raw

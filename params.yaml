@@ -11,9 +11,11 @@ prepare:
   test_size: 0.3
   sampling: None
   sampling_params:
-    method: Random
+    method: None
     params:
-      sampling_strategy: auto
+      sampling_strategy: not minority
+      min_samples: 100
+      neighbors: 3
       seed: 42
 
 train:

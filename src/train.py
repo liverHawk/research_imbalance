@@ -5,6 +5,7 @@ import pandas as pd
 from glob import glob
 from lib.util import setup_logging
 from classifier.improved_c45 import ImprovedC45
+from mlflow.models import infer_signature
 import mlflow
 
 
@@ -24,16 +25,25 @@ def train_process(model):
 
     logger.info("Loading training data...")
     files = glob(os.path.join("data", "prepared", "train", "*.csv.gz"))
-    train_df = pd.concat([pd.read_csv(f, dtype=np.float32) for f in files], ignore_index=True)
+    train_df = pd.concat(
+        [pd.read_csv(f, dtype=np.float32) for f in files], 
+        ignore_index=True
+    )
     logger.info("Training model...")
 
     model.fit(train_df.drop("Label", axis=1), train_df["Label"])
     logger.info("Model training complete.")
     model.save(os.path.join("data", "models", "improved_c45_model.joblib"))
+
+    signature = infer_signature(
+        train_df.drop("Label", axis=1), 
+        model.predict(train_df.drop("Label", axis=1))
+    )
+
     mlflow.sklearn.log_model(
         sk_model=model,
         name="improved_c45_model",
-        signature=mlflow.models.infer_signature(train_df.drop("Label", axis=1), model.predict(train_df.drop("Label", axis=1)))
+        signature=signature
     )
 
 
